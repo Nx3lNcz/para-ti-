@@ -1,0 +1,589 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nuestro Universo ❤️</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #010008;
+}
+
+canvas {
+  display: block;
+  touch-action: none;
+  cursor: grab;
+}
+
+canvas:active {
+  cursor: grabbing;
+}
+
+/* MENSAJE ROMÁNTICO */
+
+#mensaje-amor {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.7);
+  z-index: 10;
+
+  font-family: Georgia, serif;
+  font-size: clamp(38px, 7vw, 80px);
+  font-style: italic;
+  color: #ffe0f2;
+  white-space: nowrap;
+
+  text-shadow:
+    0 0 15px #ff4da6,
+    0 0 35px #ff2b91,
+    0 0 65px #ff69c5;
+
+  opacity: 0;
+  pointer-events: none;
+
+  transition:
+    opacity 1.5s ease,
+    transform 1.5s ease;
+}
+
+#mensaje-amor.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+</style>
+
+<!-- THREE.JS -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+  }
+}
+</script>
+</head>
+
+<body>
+
+<div id="mensaje-amor">Te amo ❤️</div>
+
+<script type="module">
+
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+// =======================================
+// ESCENA
+// =======================================
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#010008");
+
+const camera = new THREE.PerspectiveCamera(
+  65,
+  innerWidth / innerHeight,
+  0.1,
+  1500
+);
+
+camera.position.set(0, 28, 65);
+
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  powerPreference: "high-performance"
+});
+
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+document.body.appendChild(renderer.domElement);
+
+// =======================================
+// CONTROLES
+// =======================================
+
+const controls = new OrbitControls(
+  camera,
+  renderer.domElement
+);
+
+controls.enableDamping = true;
+controls.dampingFactor = 0.045;
+controls.enablePan = false;
+
+controls.minDistance = 12;
+controls.maxDistance = 160;
+
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.3;
+
+// =======================================
+// TEXTURA DE ESTRELLAS
+// =======================================
+
+function crearTextura() {
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 64;
+
+  const ctx = canvas.getContext("2d");
+
+  const grad = ctx.createRadialGradient(
+    32, 32, 0,
+    32, 32, 32
+  );
+
+  grad.addColorStop(0, "rgba(255,255,255,1)");
+  grad.addColorStop(0.15, "rgba(255,255,255,.9)");
+  grad.addColorStop(0.45, "rgba(255,255,255,.25)");
+  grad.addColorStop(1, "rgba(255,255,255,0)");
+
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 64, 64);
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+const textura = crearTextura();
+
+// =======================================
+// GALAXIA Y CORAZÓN
+// =======================================
+
+const cantidad = 45000;
+
+const posiciones = new Float32Array(cantidad * 3);
+const colores = new Float32Array(cantidad * 3);
+
+const posicionesGalaxia = new Float32Array(cantidad * 3);
+const posicionesCorazon = new Float32Array(cantidad * 3);
+
+const colorCentro = new THREE.Color("#fff2db");
+const colorRosa = new THREE.Color("#ff6bbd");
+const colorMorado = new THREE.Color("#985bff");
+const colorAzul = new THREE.Color("#507bff");
+
+const brazos = 5;
+const radioMax = 32;
+
+for (let i = 0; i < cantidad; i++) {
+
+  const i3 = i * 3;
+
+  // GALAXIA ESPIRAL
+
+  const radio = Math.pow(Math.random(), .72) * radioMax;
+
+  const brazo = (i % brazos) * Math.PI * 2 / brazos;
+
+  const angulo = brazo + radio * .48;
+
+  const dispersion = .25 + radio * .065;
+
+  const x = Math.cos(angulo) * radio
+    + (Math.random() - .5) * dispersion * 2;
+
+  const y = (Math.random() - .5)
+    * (0.3 + 3 * Math.exp(-radio * .15));
+
+  const z = Math.sin(angulo) * radio
+    + (Math.random() - .5) * dispersion * 2;
+
+  posicionesGalaxia[i3] = x;
+  posicionesGalaxia[i3 + 1] = y;
+  posicionesGalaxia[i3 + 2] = z;
+
+  posiciones[i3] = x;
+  posiciones[i3 + 1] = y;
+  posiciones[i3 + 2] = z;
+
+  // FORMA DE CORAZÓN
+
+  const t = Math.random() * Math.PI * 2;
+
+  const hx = 16 * Math.pow(Math.sin(t), 3);
+
+  const hy =
+    13 * Math.cos(t)
+    - 5 * Math.cos(2 * t)
+    - 2 * Math.cos(3 * t)
+    - Math.cos(4 * t);
+
+  const escala = Math.sqrt(Math.random());
+
+  posicionesCorazon[i3] =
+    hx * escala * 1.25;
+
+  posicionesCorazon[i3 + 1] =
+    hy * escala * 1.25;
+
+  posicionesCorazon[i3 + 2] =
+    (Math.random() - .5) * 5 * (1 - escala);
+
+  // COLORES
+
+  const distancia = radio / radioMax;
+
+  let color;
+
+  if (distancia < .25) {
+    color = colorCentro.clone().lerp(
+      colorRosa, distancia / .25
+    );
+  } else if (distancia < .65) {
+    color = colorRosa.clone().lerp(
+      colorMorado, (distancia - .25) / .4
+    );
+  } else {
+    color = colorMorado.clone().lerp(
+      colorAzul, (distancia - .65) / .35
+    );
+  }
+
+  const brillo = .7 + Math.random() * .3;
+
+  colores[i3] = color.r * brillo;
+  colores[i3 + 1] = color.g * brillo;
+  colores[i3 + 2] = color.b * brillo;
+}
+
+const geometria = new THREE.BufferGeometry();
+
+geometria.setAttribute(
+  "position",
+  new THREE.BufferAttribute(posiciones, 3)
+);
+
+geometria.setAttribute(
+  "color",
+  new THREE.BufferAttribute(colores, 3)
+);
+
+const material = new THREE.PointsMaterial({
+  size: .32,
+  map: textura,
+  vertexColors: true,
+  transparent: true,
+  opacity: .95,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  sizeAttenuation: true
+});
+
+const galaxia = new THREE.Points(
+  geometria,
+  material
+);
+
+scene.add(galaxia);
+
+// =======================================
+// NÚCLEO BRILLANTE
+// =======================================
+
+const nucleoGrupo = new THREE.Group();
+
+[
+  [1.3, "#ffffff", .9],
+  [3, "#ffb3e6", .28],
+  [6, "#a45aff", .08]
+].forEach(([radio, color, opacidad]) => {
+
+  const esfera = new THREE.Mesh(
+    new THREE.SphereGeometry(radio, 32, 32),
+    new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: opacidad,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    })
+  );
+
+  nucleoGrupo.add(esfera);
+});
+
+scene.add(nucleoGrupo);
+
+// =======================================
+// ESTRELLAS DEL FONDO
+// =======================================
+
+const fondoCantidad = 4000;
+
+const fondoPos = new Float32Array(fondoCantidad * 3);
+
+for (let i = 0; i < fondoCantidad; i++) {
+
+  const radio = 220 + Math.random() * 400;
+  const theta = Math.random() * Math.PI * 2;
+  const u = Math.random() * 2 - 1;
+  const s = Math.sqrt(1 - u * u);
+
+  fondoPos[i * 3] = radio * s * Math.cos(theta);
+  fondoPos[i * 3 + 1] = radio * u;
+  fondoPos[i * 3 + 2] = radio * s * Math.sin(theta);
+}
+
+const fondoGeo = new THREE.BufferGeometry();
+
+fondoGeo.setAttribute(
+  "position",
+  new THREE.BufferAttribute(fondoPos, 3)
+);
+
+const estrellasFondo = new THREE.Points(
+  fondoGeo,
+  new THREE.PointsMaterial({
+    color: "#b9caff",
+    size: 1.3,
+    map: textura,
+    transparent: true,
+    opacity: .75,
+    depthWrite: false
+  })
+);
+
+scene.add(estrellasFondo);
+
+// =======================================
+// CORAZONES FUGACES
+// =======================================
+
+const fugaces = [];
+
+function crearFugaz() {
+
+  const grupo = new THREE.Group();
+
+  // Forma de corazón
+  const forma = new THREE.Shape();
+
+  forma.moveTo(0, -0.5);
+  forma.bezierCurveTo(-1.8, 0.5, -1.6, 2, 0, 1.2);
+  forma.bezierCurveTo(1.6, 2, 1.8, 0.5, 0, -0.5);
+
+  const geometriaCorazon = new THREE.ShapeGeometry(forma);
+
+  const materialCorazon = new THREE.MeshBasicMaterial({
+    color: "#ff6cba",
+    transparent: true,
+    opacity: 1,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
+  const corazon = new THREE.Mesh(
+    geometriaCorazon,
+    materialCorazon
+  );
+
+  corazon.scale.setScalar(0.65);
+  grupo.add(corazon);
+
+  // Estela brillante
+  const puntos = [
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(-4, 2, 0),
+    new THREE.Vector3(-10, 5, 0)
+  ];
+
+  const geometriaEstela = new THREE.BufferGeometry()
+    .setFromPoints(puntos);
+
+  const materialEstela = new THREE.LineBasicMaterial({
+    color: "#ff9edc",
+    transparent: true,
+    opacity: .75,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
+  const estela = new THREE.Line(
+    geometriaEstela,
+    materialEstela
+  );
+
+  grupo.add(estela);
+
+  grupo.position.set(
+    -50 + Math.random() * 20,
+    15 + Math.random() * 35,
+    -25
+  );
+
+  scene.add(grupo);
+
+  fugaces.push({
+    objeto: grupo,
+    corazon,
+    estela,
+    vida: 1
+  });
+}
+
+// =======================================
+// INTERACCIÓN ROMÁNTICA
+// =======================================
+
+let esCorazon = false;
+let progreso = 0;
+let objetivo = 0;
+
+const mensajeAmor = document.getElementById("mensaje-amor");
+
+function actualizarMensaje() {
+  mensajeAmor.classList.toggle("visible", esCorazon);
+}
+
+function transformar() {
+  esCorazon = !esCorazon;
+  objetivo = esCorazon ? 1 : 0;
+  actualizarMensaje();
+
+  // El corazón se ve de frente
+  if (esCorazon) {
+    controls.autoRotate = false;
+    camera.position.set(0, 0, 65);
+    controls.target.set(0, 0, 0);
+  } else {
+    controls.autoRotate = true;
+  }
+}
+
+// Doble clic en computadora
+renderer.domElement.addEventListener(
+  "dblclick",
+  transformar
+);
+
+// Doble toque en celular
+let ultimoToque = 0;
+
+renderer.domElement.addEventListener(
+  "touchend",
+  () => {
+    const ahora = Date.now();
+
+    if (ahora - ultimoToque < 300) {
+      transformar();
+    }
+
+    ultimoToque = ahora;
+  },
+  { passive: true }
+);
+
+// =======================================
+// ANIMACIÓN
+// =======================================
+
+const reloj = new THREE.Clock();
+let tiempoFugaz = 0;
+
+function animar() {
+
+  requestAnimationFrame(animar);
+
+  const delta = Math.min(reloj.getDelta(), .05);
+
+  // Transformación suave
+  progreso += (objetivo - progreso)
+    * Math.min(delta * 1.8, 1);
+
+  const suavizado =
+    progreso * progreso * (3 - 2 * progreso);
+
+  for (let i = 0; i < cantidad * 3; i++) {
+    posiciones[i] =
+      posicionesGalaxia[i] * (1 - suavizado)
+      + posicionesCorazon[i] * suavizado;
+  }
+
+  geometria.attributes.position.needsUpdate = true;
+
+  // Rotación de galaxia
+  galaxia.rotation.y += delta * .025 * (1 - suavizado);
+
+  // Ocultar núcleo al formar corazón
+  nucleoGrupo.visible = suavizado < .8;
+  nucleoGrupo.scale.setScalar(
+    Math.max(.001, 1 - suavizado)
+  );
+
+  // Crear corazones fugaces
+  tiempoFugaz += delta;
+
+  if (tiempoFugaz > 5) {
+    crearFugaz();
+    tiempoFugaz = 0;
+  }
+
+  // Animar corazones fugaces
+  for (let i = fugaces.length - 1; i >= 0; i--) {
+
+    const f = fugaces[i];
+
+    f.objeto.position.x += delta * 45;
+    f.objeto.position.y -= delta * 20;
+
+    f.corazon.rotation.z += delta * 2;
+
+    f.vida -= delta * .7;
+
+    f.corazon.material.opacity = Math.max(0, f.vida);
+    f.estela.material.opacity = Math.max(0, f.vida * .75);
+
+    if (f.vida <= 0) {
+      scene.remove(f.objeto);
+
+      f.corazon.geometry.dispose();
+      f.corazon.material.dispose();
+
+      f.estela.geometry.dispose();
+      f.estela.material.dispose();
+
+      fugaces.splice(i, 1);
+    }
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+animar();
+
+// =======================================
+// AJUSTAR PANTALLA
+// =======================================
+
+window.addEventListener("resize", () => {
+
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(innerWidth, innerHeight);
+
+  renderer.setPixelRatio(
+    Math.min(devicePixelRatio, 2)
+  );
+});
+
+</script>
+</body>
+</html>
